@@ -3,7 +3,8 @@ import sqlparse.tokens
 
 
 CONDITIONS = {'sz': '-size {}{}c',
-              'perm': '-perm {}'}
+              'perm': '-perm {}{}',
+              'name': '-name {}{}'}
 COMPARISON = {'<': '-',
               '=': '',
               '>': '+'}
@@ -35,7 +36,31 @@ def _t_select(stmt):
     where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
     cond = _get_where_cond(where_c) if where_c else []
 
-    tests = ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value) for oper, key, comp, value in cond])
+    tests = ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
+                      for oper, key, comp, value in cond])
+
+    shell_cmd = "find {} {} {}".format(path, tests, action)
+
+    return shell_cmd
+
+
+def _t_delete(stmt):
+    """
+    Translator for DELETE stmt.
+    :param stmt: parsed sql statement.
+    :return: shell command as a string.
+    """
+    action = '-delete'
+
+    from_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'FROM')
+    from_c_idx = stmt.token_index(from_c)
+    path = stmt.token_next(from_c_idx).value
+
+    where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
+    cond = _get_where_cond(where_c) if where_c else []
+
+    tests = ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
+                      for oper, key, comp, value in cond])
 
     shell_cmd = "find {} {} {}".format(path, tests, action)
 
@@ -66,7 +91,8 @@ def _get_where_cond(where_token):
     return cond
 
 
-TRANSLATORS = {'SELECT': _t_select}
+TRANSLATORS = {'SELECT': _t_select,
+               'DELETE': _t_delete}
 
 
 def translate(stmt):
