@@ -67,6 +67,33 @@ def _t_delete(stmt):
     return shell_cmd
 
 
+def _t_insert(stmt):
+    """
+    Translator for INSERT stmt.
+    :param stmt: parsed sql statement.
+    :return: shell command as a string.
+    """
+    into_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'INTO')
+    into_c_idx = stmt.token_index(into_c)
+    path2 = stmt.token_next(into_c_idx).value
+
+    action = "-exec cp '{}' " + path2 + " \;"
+
+    from_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'FROM')
+    from_c_idx = stmt.token_index(from_c)
+    path1 = stmt.token_next(from_c_idx).value
+
+    where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
+    cond = _get_where_cond(where_c) if where_c else []
+
+    tests = ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
+                      for oper, key, comp, value in cond])
+
+    shell_cmd = "find {} {} {}".format(path1, tests, action)
+
+    return shell_cmd
+
+
 def _get_where_cond(where_token):
     """
     Extract the conditions from inside a WHERE token.
@@ -92,7 +119,8 @@ def _get_where_cond(where_token):
 
 
 TRANSLATORS = {'SELECT': _t_select,
-               'DELETE': _t_delete}
+               'DELETE': _t_delete,
+               'INSERT': _t_insert}
 
 
 def translate(stmt):
