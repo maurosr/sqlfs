@@ -18,7 +18,7 @@ if __name__ == '__main__':
         exit()
 
     for stmt in stmts:
-        print 'Translating\t"{}"'.format(stmt)
+        print '\nTranslating\t"{}"'.format(stmt)
 
         shell_cmd = ''
         shell_cmd = translate(stmt)
