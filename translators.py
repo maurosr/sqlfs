@@ -13,6 +13,10 @@ ATTRS = {'name': '%p',
          'perm': '%M'}
 
 
+def _get_conditions(cond):
+    return ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
+                      for oper, key, comp, value in cond])
+
 def _t_select(stmt):
     """
     Translator for SELECT stmt.
@@ -27,7 +31,10 @@ def _t_select(stmt):
     if attrs.match(sqlparse.tokens.Wildcard, None):
         action = '-ls'
     else:
-        action = "-printf '" + '\\t'.join([ATTRS[a] for a in attrs.value.split(',')]) + "\\n'"
+        # allow spaces between attributes
+        attrs = [a.strip() for a in attrs.value.split(',')]
+
+        action = "-printf '" + '\\t'.join([ATTRS[a] for a in attrs]) + "\\n'"
 
     from_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'FROM')
     from_c_idx = stmt.token_index(from_c)
@@ -36,8 +43,7 @@ def _t_select(stmt):
     where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
     cond = _get_where_cond(where_c) if where_c else []
 
-    tests = ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
-                      for oper, key, comp, value in cond])
+    tests = _get_conditions(cond)
 
     shell_cmd = "find {} {} {}".format(path, tests, action)
 
@@ -59,8 +65,7 @@ def _t_delete(stmt):
     where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
     cond = _get_where_cond(where_c) if where_c else []
 
-    tests = ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
-                      for oper, key, comp, value in cond])
+    tests = _get_conditions(cond)
 
     shell_cmd = "find {} {} {}".format(path, tests, action)
 
@@ -86,8 +91,7 @@ def _t_insert(stmt):
     where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
     cond = _get_where_cond(where_c) if where_c else []
 
-    tests = ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
-                      for oper, key, comp, value in cond])
+    tests = _get_conditions(cond)
 
     shell_cmd = "find {} {} {}".format(path1, tests, action)
 
