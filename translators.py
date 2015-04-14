@@ -13,9 +13,18 @@ ATTRS = {'name': '%p',
          'perm': '%M'}
 
 
-def _get_conditions(cond):
+def _get_conditions(stmt):
+    where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
+    cond = _get_where_cond(where_c) if where_c else []
     return ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
                       for oper, key, comp, value in cond])
+
+
+def _get_path(stmt, keyword="FROM"):
+    from_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, keyword)
+    from_c_idx = stmt.token_index(from_c)
+    return stmt.token_next(from_c_idx).value
+
 
 def _t_select(stmt):
     """
@@ -36,14 +45,8 @@ def _t_select(stmt):
 
         action = "-printf '" + '\\t'.join([ATTRS[a] for a in attrs]) + "\\n'"
 
-    from_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'FROM')
-    from_c_idx = stmt.token_index(from_c)
-    path = stmt.token_next(from_c_idx).value
-
-    where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
-    cond = _get_where_cond(where_c) if where_c else []
-
-    tests = _get_conditions(cond)
+    path = _get_path(stmt)
+    tests = _get_conditions(stmt)
 
     shell_cmd = "find {} {} {}".format(path, tests, action)
 
@@ -58,17 +61,10 @@ def _t_delete(stmt):
     """
     action = '-delete'
 
-    from_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'FROM')
-    from_c_idx = stmt.token_index(from_c)
-    path = stmt.token_next(from_c_idx).value
-
-    where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
-    cond = _get_where_cond(where_c) if where_c else []
-
-    tests = _get_conditions(cond)
+    path = _get_path(stmt)
+    tests = _get_conditions(stmt)
 
     shell_cmd = "find {} {} {}".format(path, tests, action)
-
     return shell_cmd
 
 
@@ -78,23 +74,13 @@ def _t_insert(stmt):
     :param stmt: parsed sql statement.
     :return: shell command as a string.
     """
-    into_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'INTO')
-    into_c_idx = stmt.token_index(into_c)
-    path2 = stmt.token_next(into_c_idx).value
-
     action = "-exec cp '{}' " + path2 + " \;"
 
-    from_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'FROM')
-    from_c_idx = stmt.token_index(from_c)
-    path1 = stmt.token_next(from_c_idx).value
-
-    where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
-    cond = _get_where_cond(where_c) if where_c else []
-
-    tests = _get_conditions(cond)
+    path2 = _get_path(stmt, "INTO")
+    path1 = _get_path(stmt)
+    tests = _get_conditions(stmt)
 
     shell_cmd = "find {} {} {}".format(path1, tests, action)
-
     return shell_cmd
 
 
