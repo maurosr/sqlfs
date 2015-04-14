@@ -17,8 +17,11 @@ ATTRS = {'sz': '%s',
          'name': '%p',
          'u': '%u',
          'g': '%g',
-         'modified': '%Tc'
+         'modified': '%Tc',
+         'sum': '$S'
          }
+
+PRECMD = {'sum': "S=$( (find {} -maxdepth 1 -printf s+=%s\\\\n; echo s) | bc)"}
 
 
 def _get_conditions(stmt):
@@ -53,21 +56,26 @@ def _t_select(stmt):
     select_c = stmt.token_next_match(0, sqlparse.tokens.Keyword.DML, 'SELECT')
     select_c_idx = stmt.token_index(select_c)
 
+    path = _get_path(stmt)
+
     attrs = stmt.token_next(select_c_idx)
 
+    pre_cmd = ''
     if attrs.match(sqlparse.tokens.Wildcard, None):
         action = '-ls'
     else:
         # allow spaces between attributes
-        attrs = [a.strip() for a in attrs.value.split(',')]
+        attrs = [a.strip().split('(')[0].lower() for a in attrs.value.split(',')]
 
-        action = "-printf '" + '\\t'.join([ATTRS[a] for a in attrs]) + "\\n'"
+        if 'sum' in attrs:
+            pre_cmd = PRECMD['sum'].format(path) + '; '
 
-    path = _get_path(stmt)
+        action = "-printf " + '\\\\t'.join([ATTRS[a] for a in attrs]) + "\\\\n"
+
     options = _get_options(stmt)
     tests = _get_conditions(stmt)
 
-    shell_cmd = "find {} {} {} {}".format(path, options, tests, action)
+    shell_cmd = pre_cmd + "find {} {} {} {}".format(path, options, tests, action)
 
     return shell_cmd
 
