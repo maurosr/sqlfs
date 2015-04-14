@@ -20,6 +20,16 @@ def _get_conditions(stmt):
                      for oper, key, comp, value in cond])
 
 
+def _get_options(stmt):
+    recursive = stmt.token_next_match(0, sqlparse.tokens.Keyword, 'RECURSIVE')
+
+    options = ''
+    if not recursive:
+        options += ' -maxdepth 1'
+
+    return options
+
+
 def _get_path(stmt, keyword="FROM"):
     from_c = stmt.token_next_match(0, sqlparse.tokens.Keyword, keyword)
     from_c_idx = stmt.token_index(from_c)
@@ -46,9 +56,10 @@ def _t_select(stmt):
         action = "-printf '" + '\\t'.join([ATTRS[a] for a in attrs]) + "\\n'"
 
     path = _get_path(stmt)
+    options = _get_options(stmt)
     tests = _get_conditions(stmt)
 
-    shell_cmd = "find {} {} {}".format(path, tests, action)
+    shell_cmd = "find {} {} {} {}".format(path, options, tests, action)
 
     return shell_cmd
 
@@ -62,9 +73,10 @@ def _t_delete(stmt):
     action = '-delete'
 
     path = _get_path(stmt)
+    options = _get_options(stmt)
     tests = _get_conditions(stmt)
 
-    shell_cmd = "find {} {} {}".format(path, tests, action)
+    shell_cmd = "find {} {} {} {}".format(path, options, tests, action)
     return shell_cmd
 
 
@@ -78,9 +90,10 @@ def _t_insert(stmt):
     action = "-exec cp '{}' " + path2 + " \;"
 
     path1 = _get_path(stmt)
+    options = _get_options(stmt)
     tests = _get_conditions(stmt)
 
-    shell_cmd = "find {} {} {}".format(path1, tests, action)
+    shell_cmd = "find {} {} {} {}".format(path1, options, tests, action)
     return shell_cmd
 
 
