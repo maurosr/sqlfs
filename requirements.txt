@@ -1,4 +1,1 @@
-argparse==1.2.1
--e hg+https://diegolis@bitbucket.org/marioandres/neuronas@c0d5366f7b209d8ef88025e43e83e4e49d151db9#egg=neuronas-dimensiones
 sqlparse==0.1.14
-wsgiref==0.1.2
