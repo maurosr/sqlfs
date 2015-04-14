@@ -2,9 +2,13 @@ import sqlparse.sql
 import sqlparse.tokens
 
 
-CONDITIONS = {'sz': '-size {}{}c',
+CONDITIONS = {'sz': '-size {}{}c',  # in bytes
               'perm': '-perm {}{}',
-              'name': '-name {}{}'}
+              'name': '-name {}{}',
+              'u': '-user {}{}',
+              'g': '-group {}{}',
+              'modified': '-mtime {}{}',  # in days
+              }
 COMPARISON = {'<': '-',
               '=': '',
               '>': '+'}
