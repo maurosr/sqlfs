@@ -17,7 +17,7 @@ def _get_conditions(stmt):
     where_c = stmt.token_next_by_instance(0, sqlparse.sql.Where)
     cond = _get_where_cond(where_c) if where_c else []
     return ' '.join([oper + ' ' + CONDITIONS[key.lower()].format(COMPARISON[comp], value)
-                      for oper, key, comp, value in cond])
+                     for oper, key, comp, value in cond])
 
 
 def _get_path(stmt, keyword="FROM"):
@@ -74,9 +74,9 @@ def _t_insert(stmt):
     :param stmt: parsed sql statement.
     :return: shell command as a string.
     """
+    path2 = _get_path(stmt, "INTO")
     action = "-exec cp '{}' " + path2 + " \;"
 
-    path2 = _get_path(stmt, "INTO")
     path1 = _get_path(stmt)
     tests = _get_conditions(stmt)
 
@@ -93,7 +93,8 @@ def _get_where_cond(where_token):
     cond = []
     idx = 0
 
-    while idx == 0 or op is not None and op.match(sqlparse.tokens.Keyword, ['AND', 'OR']):
+    op = None
+    while idx == 0 or (op is not None and op.match(sqlparse.tokens.Keyword, ['AND', 'OR'])):
         compare = where_token.token_next(idx)
 
         # allow spaces between operators
