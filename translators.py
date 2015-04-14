@@ -7,14 +7,18 @@ CONDITIONS = {'sz': '-size {}{}c',  # in bytes
               'name': '-name {}{}',
               'u': '-user {}{}',
               'g': '-group {}{}',
-              'modified': '-mtime {}{}',  # in days
+              'modified': '-mtime {}{}'  # in days
               }
 COMPARISON = {'<': '-',
               '=': '',
               '>': '+'}
-ATTRS = {'name': '%p',
-         'sz': '%s',
-         'perm': '%M'}
+ATTRS = {'sz': '%s',
+         'perm': '%M',
+         'name': '%p',
+         'u': '%u',
+         'g': '%g',
+         'modified': '%Tc'
+         }
 
 
 def _get_conditions(stmt):
