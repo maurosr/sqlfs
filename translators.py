@@ -93,14 +93,16 @@ def _get_where_cond(where_token):
     cond = []
     idx = 0
     compare = where_token.token_next(idx)
-    cond.append(('', compare.left.value, compare.tokens[1].value, compare.right.value))
+    token_compare = [t for t in compare.tokens[1:-1] if t.value.strip() != ""]
+    cond.append(('', compare.left.value, token_compare[0].value, compare.right.value))
 
     idx = where_token.token_index(compare)
     op = where_token.token_next(idx)
     while op is not None and op.match(sqlparse.tokens.Keyword, ['AND', 'OR']):
         idx = where_token.token_index(op)
         compare = where_token.token_next(idx)
-        cond.append(('-'+op.value.lower(), compare.left.value, compare.tokens[1].value, compare.right.value))
+        token_compare = [t for t in compare.tokens[1:-1] if t.value.strip() != ""]
+        cond.append(('-'+op.value.lower(), compare.left.value, token_compare[0].value, compare.right.value))
 
         idx = where_token.token_index(compare)
         op = where_token.token_next(idx)
